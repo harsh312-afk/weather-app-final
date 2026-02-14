@@ -1,4 +1,4 @@
-const API_KEY = "e42c6cd592a17c6a9dda4120bf645170"; // Your Key
+const API_KEY = "e42c6cd592a17c6a9dda4120bf645170";
 const WEATHER_API_URL = "https://api.openweathermap.org/data/2.5/forecast";
 
 const cityInput = document.getElementById("city-input");
@@ -8,6 +8,9 @@ const weatherContainer = document.getElementById("weather-container");
 const errorMsg = document.getElementById("error-msg");
 const forecastContainer = document.getElementById("forecast-container");
 const recentCitiesSelect = document.getElementById("recent-cities");
+
+document.addEventListener("DOMContentLoaded", loadRecentCities);
+
 
 async function getWeatherData(city) {
     const url = `${WEATHER_API_URL}?q=${city}&appid=${API_KEY}&units=metric`;
@@ -21,7 +24,6 @@ async function getWeatherData(city) {
         return null;
     }
 }
-
 
 function updateCurrentWeather(data) {
     const current = data.list[0];
@@ -40,10 +42,8 @@ function updateCurrentWeather(data) {
     document.getElementById("weather-icon").src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
 }
 
-
 function updateForecast(data) {
     forecastContainer.innerHTML = ""; 
-    
     const dailyForecast = data.list.filter(reading => reading.dt_txt.includes("12:00:00"));
 
     dailyForecast.forEach(day => {
@@ -70,7 +70,6 @@ function updateForecast(data) {
     });
 }
 
-
 function showError(message) {
     errorMsg.textContent = message;
     errorMsg.classList.remove("hidden");
@@ -79,10 +78,51 @@ function showError(message) {
 
 
 
+function loadRecentCities() {
+    const recent = JSON.parse(localStorage.getItem("recentCities")) || [];
+    if (recent.length > 0) {
+        recentCitiesSelect.classList.remove("hidden");
+        
+        recentCitiesSelect.innerHTML = '<option value="" disabled selected>Recent Cities</option>';
+        
+        recent.forEach(city => {
+            const option = document.createElement("option");
+            option.value = city;
+            option.textContent = city;
+            recentCitiesSelect.appendChild(option);
+        });
+    }
+}
+
+function addToRecent(city) {
+    let recent = JSON.parse(localStorage.getItem("recentCities")) || [];
+    
+    if (!recent.includes(city)) {
+        recent.push(city);
+        if (recent.length > 5) recent.shift(); 
+        
+        localStorage.setItem("recentCities", JSON.stringify(recent));
+        loadRecentCities(); 
+    }
+}
+
+
 searchBtn.addEventListener("click", async () => {
     const city = cityInput.value.trim();
     if (!city) return;
 
+    const data = await getWeatherData(city);
+    if (data) {
+        updateCurrentWeather(data);
+        updateForecast(data);
+        addToRecent(data.city.name); 
+    }
+});
+
+recentCitiesSelect.addEventListener("change", async (e) => {
+    const city = e.target.value;
+    if (!city) return;
+    
     const data = await getWeatherData(city);
     if (data) {
         updateCurrentWeather(data);
