@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <link href="./dist/output.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
+
+    <header class="w-full max-w-md bg-white p-4 rounded-lg shadow-md mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4 text-center">Weather Dashboard</h1>
+        
+        <div class="flex gap-2">
+            <input type="text" id="city-input" placeholder="Enter city name" 
+                   class="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+            <button id="search-btn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold">Search</button>
+            <button id="location-btn" class="bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600">📍</button>
+        </div>
+        
+        <select id="recent-cities" class="w-full mt-4 p-2 border border-gray-300 rounded hidden">
+            <option value="" disabled selected>Recent Cities</option>
+        </select>
+        
+        <div id="error-msg" class="hidden mt-2 text-red-500 text-sm text-center font-semibold"></div>
+    </header>
+
+    <main id="weather-container" class="w-full max-w-md hidden">
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-6 text-center">
+            <h2 id="city-name" class="text-3xl font-bold mb-2">London</h2>
+            <p id="weather-date" class="text-gray-500 mb-4">--</p>
+            <img id="weather-icon" src="" alt="Weather Icon" class="mx-auto w-24 h-24">
+            <p id="temperature" class="text-5xl font-bold my-2">--°C</p>
+            <p id="description" class="text-xl capitalize text-gray-600">--</p>
+            
+            <div class="flex justify-around mt-6 text-gray-700 bg-gray-50 p-3 rounded-lg">
+                <div class="text-center">
+                    <p class="font-semibold text-sm">Wind</p>
+                    <p id="wind-speed" class="text-lg">--</p>
+                </div>
+                <div class="text-center">
+                    <p class="font-semibold text-sm">Humidity</p>
+                    <p id="humidity" class="text-lg">--</p>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="text-xl font-bold mb-4 text-gray-800">5-Day Forecast</h3>
+        <div id="forecast-container" class="space-y-3">
+            </div>
+    </main>
+
+    <script src="./src/script.js"></script>
+</body>
+</html>
