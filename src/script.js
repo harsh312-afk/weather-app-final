@@ -86,7 +86,8 @@ function updateForecast(data) {
 
 function updateBackground(condition) {
   const body = document.body;
-  body.className = "min-h-screen flex flex-col items-center p-4 transition-colors duration-500";
+  
+  body.className = "min-h-screen flex flex-col items-center p-4 transition-colors duration-500 text-gray-800";
   
   switch (condition) {
     case "Clear":
@@ -98,7 +99,7 @@ function updateBackground(condition) {
     case "Rain":
     case "Drizzle":
     case "Thunderstorm":
-      body.classList.add("bg-gradient-to-br", "from-gray-800", "to-gray-600", "text-white");
+      body.classList.add("bg-gradient-to-br", "from-gray-800", "to-gray-600");
       break;
     case "Snow":
       body.classList.add("bg-gradient-to-br", "from-blue-100", "to-white");
