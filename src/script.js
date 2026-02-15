@@ -87,23 +87,35 @@ function updateForecast(data) {
 function updateBackground(condition) {
   const body = document.body;
   
-  body.className = "min-h-screen flex flex-col items-center p-4 transition-colors duration-500 text-gray-800";
+  
+  body.className = "min-h-screen flex flex-col items-center p-4 transition-colors duration-500 text-gray-800 relative overflow-hidden";
+  
+  
+  clearEffects(); 
+
   
   switch (condition) {
     case "Clear":
       body.classList.add("bg-gradient-to-br", "from-blue-400", "to-blue-200");
       break;
+      
     case "Clouds":
       body.classList.add("bg-gradient-to-br", "from-gray-300", "to-gray-100");
+      createClouds(); 
       break;
+      
     case "Rain":
     case "Drizzle":
     case "Thunderstorm":
       body.classList.add("bg-gradient-to-br", "from-gray-800", "to-gray-600");
+      createRain(); 
       break;
+      
     case "Snow":
       body.classList.add("bg-gradient-to-br", "from-blue-100", "to-white");
+      createSnow(); 
       break;
+      
     default:
       body.classList.add("bg-blue-50");
   }
@@ -212,3 +224,64 @@ locationBtn.addEventListener("click", () => {
     locationBtn.textContent = "📍";
   }
 });
+
+
+const effectsContainer = document.getElementById("weather-effects");
+
+function clearEffects() {
+  effectsContainer.innerHTML = ""; 
+}
+
+function createRain() {
+  clearEffects();
+  const dropCount = 100; 
+
+  for (let i = 0; i < dropCount; i++) {
+    const drop = document.createElement("div");
+    drop.classList.add("raindrop");
+    
+    drop.style.left = `${Math.random() * 100}vw`;
+    drop.style.animationDuration = `${Math.random() * 0.5 + 0.5}s`; 
+    drop.style.animationDelay = `${Math.random() * 2}s`;
+    
+    effectsContainer.appendChild(drop);
+  }
+}
+
+function createSnow() {
+  clearEffects();
+  const flakeCount = 50;
+
+  for (let i = 0; i < flakeCount; i++) {
+    const flake = document.createElement("div");
+    flake.classList.add("snowflake");
+    
+    const size = Math.random() * 5 + 2 + "px"; 
+    flake.style.width = size;
+    flake.style.height = size;
+    flake.style.left = `${Math.random() * 100}vw`;
+    flake.style.animationDuration = `${Math.random() * 3 + 2}s`; 
+    flake.style.animationDelay = `${Math.random() * 5}s`;
+    
+    effectsContainer.appendChild(flake);
+  }
+}
+
+function createClouds() {
+  clearEffects();
+  const cloudCount = 5;
+
+  for (let i = 0; i < cloudCount; i++) {
+    const cloud = document.createElement("img");
+    cloud.src = "https://openweathermap.org/img/wn/03d@4x.png"; 
+    cloud.classList.add("cloud-anim");
+    
+    cloud.style.top = `${Math.random() * 50}vh`; 
+    cloud.style.width = `${Math.random() * 100 + 100}px`; 
+    cloud.style.opacity = "0.6";
+    cloud.style.animationDuration = `${Math.random() * 20 + 30}s`;
+    cloud.style.animationDelay = `-${Math.random() * 20}s`; 
+    
+    effectsContainer.appendChild(cloud);
+  }
+}
