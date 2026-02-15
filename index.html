@@ -10,7 +10,7 @@
     
     <div id="weather-effects" class="fixed inset-0 pointer-events-none z-0 overflow-hidden"></div>
 
-    <header class="w-full max-w-md bg-white p-4 rounded-lg shadow-md mb-6 relative z-10">
+    <header class="w-full max-w-4xl bg-white p-4 rounded-lg shadow-md mb-6 relative z-10">
       <h1 class="text-2xl font-bold text-gray-800 mb-4 text-center">
         Weather Dashboard
       </h1>
@@ -55,39 +55,43 @@
       ></div>
     </header>
 
-    <main id="weather-container" class="w-full max-w-md hidden relative z-10">
-      <div class="bg-white p-6 rounded-lg shadow-lg mb-6 text-center">
-        <h2 id="city-name" class="text-3xl font-bold mb-2">London</h2>
-        <p id="weather-date" class="text-gray-500 mb-4">--</p>
+    <main id="weather-container" class="w-full max-w-4xl hidden relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+      
+      <div class="bg-white p-8 rounded-lg shadow-lg text-center flex flex-col justify-center h-full">
+        <h2 id="city-name" class="text-4xl font-bold mb-2">London</h2>
+        <p id="weather-date" class="text-gray-500 mb-6">--</p>
+        
         <img
           id="weather-icon"
           src=""
           alt="Weather Icon"
-          class="mx-auto w-24 h-24"
+          class="mx-auto w-32 h-32"
         />
-        <p id="temperature" class="text-5xl font-bold my-2">--°C</p>
-        <p id="description" class="text-xl capitalize text-gray-600">--</p>
+        
+        <p id="temperature" class="text-6xl font-bold my-4">--°C</p>
+        <p id="description" class="text-2xl capitalize text-gray-600 mb-6">--</p>
 
-        <div
-          class="flex justify-around mt-6 text-gray-700 bg-gray-50 p-3 rounded-lg"
-        >
+        <div class="flex justify-around mt-auto text-gray-700 bg-gray-50 p-4 rounded-lg">
           <div class="text-center">
-            <p class="font-semibold text-sm">Wind</p>
-            <p id="wind-speed" class="text-lg">--</p>
+            <p class="font-semibold text-base">Wind</p>
+            <p id="wind-speed" class="text-xl">--</p>
           </div>
           <div class="text-center">
-            <p class="font-semibold text-sm">Humidity</p>
-            <p id="humidity" class="text-lg">--</p>
+            <p class="font-semibold text-base">Humidity</p>
+            <p id="humidity" class="text-xl">--</p>
           </div>
         </div>
       </div>
 
-      <h3 class="text-xl font-bold mb-4 text-gray-800">5-Day Forecast</h3>
-      <div id="forecast-container" class="space-y-3"></div>
+      <div class="flex flex-col">
+          <h3 class="text-2xl font-bold mb-4 text-gray-800 bg-white/80 p-2 rounded backdrop-blur-sm">5-Day Forecast</h3>
+          <div id="forecast-container" class="space-y-3">
+              </div>
+      </div>
     </main>
 
     <footer class="mt-8 text-gray-500 text-sm relative z-10">
-        <p>Developed by Your Name</p>
+        <p>Developed by Harsh Gautam</p>
     </footer>
 
     <script src="./src/script.js"></script>
