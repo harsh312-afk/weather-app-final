@@ -1,3 +1,4 @@
+```markdown
 # 🌤️ Weather Forecast Dashboard
 
 A responsive, feature-rich weather application built with Vanilla JavaScript and Tailwind CSS. This dashboard provides real-time current weather conditions and a 5-day forecast for any city in the world, complete with dynamic visual effects.
@@ -30,7 +31,7 @@ Follow these steps to run the project locally on your machine.
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/harsh312-afk/weather-app-final.git](https://github.com/harsh312-afk/weather-app-final.git)
+   git clone https://github.com/harsh312-afk/weather-app-final.git
    cd weather-app-final
 
 ```
