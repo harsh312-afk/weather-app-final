@@ -33,11 +33,11 @@ Follow these steps to run the project locally on your machine.
    git clone https://github.com/harsh312-afk/weather-app-final.git
    cd weather-app-final
 
-```
+
 
 2. **Install dependencies:**
 ```bash
-npm install
+   npm install
 
 ```
 
@@ -45,7 +45,7 @@ npm install
 3. **Start the Tailwind CSS compiler:**
 Leave this running in your terminal so it can compile the CSS updates:
 ```bash
-npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
+   npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
 
 ```
 
