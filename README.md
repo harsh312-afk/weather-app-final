@@ -33,32 +33,34 @@ Follow these steps to run the project locally on your machine.
    git clone [https://github.com/harsh312-afk/weather-app-final.git](https://github.com/harsh312-afk/weather-app-final.git)
    cd weather-app-final
 
-    Install dependencies:
-    Bash
+```
 
-    npm install
+2. **Install dependencies:**
+```bash
+npm install
 
-    Start the Tailwind CSS compiler:
-    Leave this running in your terminal so it can compile the CSS updates:
-    Bash
+```
 
-    npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
 
-    Run the App:
-    Open index.html in your browser. If you are using VS Code, right-click index.html and select Open with Live Server to avoid browser CORS/Geolocation restrictions.
+3. **Start the Tailwind CSS compiler:**
+Leave this running in your terminal so it can compile the CSS updates:
+```bash
+npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
 
-💡 Usage
+```
 
-    Type a city name (e.g., "Tokyo", "New York") into the search bar and click Search.
 
-    Click the 📍 button to let the app detect your local weather.
+4. **Run the App:**
+Open `index.html` in your browser. If you are using VS Code, right-click `index.html` and select **Open with Live Server** to avoid browser CORS/Geolocation restrictions.
 
-    Click the °C / °F button to switch the temperature format.
+## 💡 Usage
 
-    Click the "Recent Cities" dropdown to quickly revisit previous searches.
+1. Type a city name (e.g., "Tokyo", "New York") into the search bar and click **Search**.
+2. Click the **📍** button to let the app detect your local weather.
+3. Click the **°C / °F** button to switch the temperature format.
+4. Click the "Recent Cities" dropdown to quickly revisit previous searches.
+5. Watch the background gradients and animations change to match the sky!
 
-    Watch the background gradients and animations change to match the sky!
+## 👨‍💻 Author
 
-👨‍💻 Author
-
-Developed by Harsh Gautam
+Developed by **Harsh Gautam**
