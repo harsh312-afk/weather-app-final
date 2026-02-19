@@ -1,30 +1,30 @@
-# 🌤️ My Weather Dashboard
+# 🌤️ Weather Forecast Dashboard
 
-A responsive, feature-rich weather application built with Vanilla JavaScript and Tailwind CSS. This dashboard provides real-time current weather conditions and a 5-day forecast for any city in the world, complete with dynamic visual effects.
+
+The Weather Dashboard is a feature-rich, responsive weather app built using Vanilla JavaScript and Tailwind CSS. The dashboard provides real-time live current weather and a 5-day forecast for any city around the world, along with dynamic visual effects.
 
 ## ✨ Features
 
-- Live Weather Data: Retrieves real-time current weather and 5-day forecast data from the OpenWeatherMap API.
-- Geolocation Support: Click the 📍 button to retrieve the current weather instantly for your location .
-- Dynamic Animated Backgrounds: The application's background and custom CSS particle animations (rain, snow, drifting clouds) updates based on the current weather.
-- Unit Conversion: Easily switch between Celsius (°C) and Fahrenheit (°F) .
-- Search History: Saves your recently searched locations in the browser's localStorage to provide quick access .
-- Responsive Grid-Based Design: The layout is optimized to work well on any device. The clean and simple single-column stacked layout is perfect for mobile devices, while larger desktop screens provide a spacious side-by-side layout.
+- **Real-time Weather Data**: Fetches real-time current weather and 5-day forecast using the OpenWeatherMap API.
+- **Geolocation Functionality**: By clicking on the 📍 button, the application will instantly present you with the current weather conditions based on your current location (this feature supports device fallback for devices without GPS).
+- **Animated Backgrounds**: The application’s background will automatically change based on the current weather conditions, with custom CSS particle effects (i.e. Rain, Snow, Fluttering Clouds).
+- **Temperature Unit Conversion**: Users can easily switch between Celsius (°C) and Fahrenheit (°F) without making additional API requests.
+- **Search History**: The application uses the browser's `localStorage` to save cities that the user has previously searched, for easy access via a dropdown menu.
+- **Responsive Grid Layout**: The application is optimized for all devices. The mobile view will have a clean, single-column stacked layout; while on desktop, the mobile view will expand into a large area with the information being laid out in a side-by-side fashion.
 
 ## 🛠️ Tech Stack
 
-**Frontend**: HTML5, Tailwind CSS (using Tailwind CLI)
-**Scripting**: JavaScript (ES6+ features like async/await, DOM manipulation)
-**API**: OpenWeatherMap API
-
-
+- **Frontend**: HTML5, Tailwind CSS (via Tailwind CLI)
+- **Scripting**: Vanilla JavaScript (ES6+ (with `async/await` and DOM manipulation)),
+- **API**: OpenWeatherMap API
+`
 ## 🚀 Getting Started
 
-Follow these steps to run the project locally on your Computer.
+Follow these steps to run the project locally on your machine.
 
 ### Prerequisites
-- Node.js and npm installed (for Tailwind Fcuntionality).
-- A reletively modern web browser(Firefox, Chrome, etc.).
+- Node.js and npm installed (for Tailwind CSS).
+- A modern web browser.
 - (Optional) VS Code with the "Live Server" extension.
 
 ### Installation
@@ -34,7 +34,7 @@ Follow these steps to run the project locally on your Computer.
    git clone https://github.com/harsh312-afk/weather-app-final.git
    cd weather-app-final
 
-
+   ```
 
 2. **Install dependencies:**
    ```bash
