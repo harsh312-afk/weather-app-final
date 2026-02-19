@@ -4,12 +4,12 @@ A responsive, feature-rich weather application built with Vanilla JavaScript and
 
 ## ✨ Features
 
-Live Weather Data: Retrieves real-time current weather and 5-day forecast data from the OpenWeatherMap API.
-    Geolocation Support: Click the 📍 button to retrieve the current weather instantly for your location .
-    Dynamic Animated Backgrounds: The application's background and custom CSS particle animations (rain, snow, drifting clouds) updates based on the current weather.
-    Unit Conversion: Easily switch between Celsius (°C) and Fahrenheit (°F) .
-    Search History: Saves your recently searched locations in the browser's localStorage to provide quick access .
-    Responsive Grid-Based Design: The layout is optimized to work well on any device. The clean and simple single-column stacked layout is perfect for mobile devices, while larger desktop screens provide a spacious side-by-side layout.
+- Live Weather Data: Retrieves real-time current weather and 5-day forecast data from the OpenWeatherMap API.
+- Geolocation Support: Click the 📍 button to retrieve the current weather instantly for your location .
+- Dynamic Animated Backgrounds: The application's background and custom CSS particle animations (rain, snow, drifting clouds) updates based on the current weather.
+- Unit Conversion: Easily switch between Celsius (°C) and Fahrenheit (°F) .
+- Search History: Saves your recently searched locations in the browser's localStorage to provide quick access .
+- Responsive Grid-Based Design: The layout is optimized to work well on any device. The clean and simple single-column stacked layout is perfect for mobile devices, while larger desktop screens provide a spacious side-by-side layout.
 
 ## 🛠️ Tech Stack
 
