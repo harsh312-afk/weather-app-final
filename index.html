@@ -1,99 +1,585 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Weather App</title>
-    <link href="./dist/output.css" rel="stylesheet" />
-  </head>
-  <body class="bg-gray-100 min-h-screen flex flex-col items-center p-4 relative transition-colors duration-500">
+    <title>SkyCast — Atmospheric Weather & Forecast Dashboard</title>
+    <meta name="description" content="Modern, real-time weather forecasting dashboard with dynamic particle effects, hourly & 5-day forecasts, air quality index, UV index, and interactive radar maps." />
     
-    <div id="weather-effects" class="fixed inset-0 pointer-events-none z-0 overflow-hidden"></div>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS for Weather Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Compiled Tailwind CSS -->
+    <link href="./dist/output.css" rel="stylesheet" />
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-100 relative selection:bg-sky-500 selection:text-white transition-colors duration-700">
+    
+    <!-- Dynamic Atmospheric Effects Container -->
+    <div id="weather-effects" class="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true"></div>
+    <div id="lightning-effect" class="hidden lightning-overlay" aria-hidden="true"></div>
+    <div id="sun-glow-effect" class="hidden sun-glow" aria-hidden="true"></div>
 
-    <header class="w-full max-w-4xl bg-white p-4 rounded-lg shadow-md mb-6 relative z-10">
-      <h1 class="text-2xl font-bold text-gray-800 mb-4 text-center">
-        Weather Dashboard
-      </h1>
+    <!-- Main App Container -->
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col min-h-screen">
+      
+      <!-- Top Navigation & Search Bar -->
+      <header class="w-full glass-card p-4 sm:p-5 mb-6 shadow-2xl">
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+          
+          <!-- Logo & Branding -->
+          <div class="flex items-center justify-between w-full lg:w-auto">
+            <div class="flex items-center gap-3 cursor-pointer select-none" id="brand-logo">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-sky-500/30 ring-1 ring-white/20">
+                <i data-lucide="cloud-sun" class="w-6 h-6 text-white animate-pulse-slow"></i>
+              </div>
+              <div>
+                <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-sky-100 to-sky-400 bg-clip-text text-transparent">
+                  SkyCast
+                </h1>
+                <p class="text-xs text-slate-400 font-medium">Atmospheric Dashboard</p>
+              </div>
+            </div>
 
-      <div class="flex gap-2">
-        <input
-          type="text"
-          id="city-input"
-          placeholder="Enter city name"
-          class="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-        />
-        <button
-          id="search-btn"
-          class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 font-bold"
+            <!-- Mobile Quick Actions -->
+            <div class="flex items-center gap-2 lg:hidden">
+              <button id="mobile-unit-btn" class="glass-pill text-xs py-1.5 px-3 flex items-center gap-1" title="Toggle °C / °F">
+                <span class="font-bold text-sky-400 active-unit-text">°C</span>
+              </button>
+              <button id="mobile-audio-btn" class="glass-pill text-xs py-1.5 px-2.5" title="Toggle Soundscape">
+                <i data-lucide="volume-x" class="w-4 h-4 text-slate-400 audio-icon"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Search Input & Autocomplete Dropdown -->
+          <div class="relative w-full lg:max-w-xl">
+            <form id="search-form" class="relative flex items-center w-full" onsubmit="return false;">
+              <i data-lucide="search" class="absolute left-4 w-5 h-5 text-slate-400 pointer-events-none"></i>
+              <input
+                type="text"
+                id="city-input"
+                placeholder="Search city, country or place (e.g. Tokyo, Paris, New York)..."
+                autocomplete="off"
+                class="glass-input w-full pl-12 pr-28 py-3 text-sm sm:text-base font-medium shadow-inner placeholder-slate-400/80"
+                aria-label="Search city"
+              />
+              <div class="absolute right-2 flex items-center gap-1.5">
+                <button
+                  type="button"
+                  id="clear-search-btn"
+                  class="hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition"
+                  title="Clear input"
+                >
+                  <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+                <button
+                  type="submit"
+                  id="search-btn"
+                  class="glass-button bg-sky-500 hover:bg-sky-400 text-white text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg shadow-md shadow-sky-500/20"
+                >
+                  Search
+                </button>
+              </div>
+            </form>
+
+            <!-- Autocomplete Suggestions Dropdown -->
+            <div
+              id="suggestions-dropdown"
+              class="absolute left-0 right-0 top-full mt-2 glass-card bg-slate-900/95 backdrop-blur-2xl border border-white/20 rounded-xl shadow-2xl overflow-hidden hidden z-50 divide-y divide-white/10 max-h-72 overflow-y-auto custom-scrollbar"
+            >
+              <!-- Dynamic suggestions inserted here -->
+            </div>
+          </div>
+
+          <!-- Controls: Location, Unit, Soundscape, Shortcuts -->
+          <div class="hidden lg:flex items-center gap-2.5">
+            <button
+              id="location-btn"
+              class="glass-button bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30"
+              title="Detect Current Location (L)"
+            >
+              <i data-lucide="locate" class="w-4 h-4"></i>
+              <span class="text-sm">My Location</span>
+            </button>
+
+            <button
+              id="unit-btn"
+              class="glass-button bg-white/10 hover:bg-white/20 text-slate-200 border border-white/20 font-bold min-w-[50px]"
+              title="Toggle Units (°C / °F) (U)"
+            >
+              <span class="active-unit-text">°C</span>
+            </button>
+
+            <button
+              id="audio-btn"
+              class="glass-button bg-white/10 hover:bg-white/20 text-slate-300 border border-white/20"
+              title="Toggle Atmospheric Soundscape (S)"
+            >
+              <i data-lucide="volume-x" class="w-4 h-4 audio-icon"></i>
+            </button>
+
+            <button
+              id="share-btn"
+              class="glass-button bg-white/10 hover:bg-white/20 text-slate-300 border border-white/20"
+              title="Share Weather Report"
+            >
+              <i data-lucide="share-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Quick Access: Favorite Cities & Recent Searches -->
+        <div class="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <!-- Favorite Cities -->
+          <div class="flex items-center gap-2 flex-wrap" id="favorites-section">
+            <span class="text-amber-400 font-semibold flex items-center gap-1">
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i> Favorites:
+            </span>
+            <div id="favorites-container" class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-slate-500 text-xs italic">No pinned favorites yet</span>
+            </div>
+          </div>
+
+          <!-- Recent Searches -->
+          <div class="flex items-center gap-2 flex-wrap" id="recent-section">
+            <span class="text-slate-400 font-medium flex items-center gap-1">
+              <i data-lucide="history" class="w-3.5 h-3.5"></i> Recent:
+            </span>
+            <div id="recent-container" class="flex items-center gap-1.5 flex-wrap">
+              <!-- Dynamic pills -->
+            </div>
+            <button id="clear-recent-btn" class="text-slate-500 hover:text-slate-300 text-xs underline hidden">Clear</button>
+          </div>
+        </div>
+
+        <!-- Notification / Error Banner -->
+        <div
+          id="status-banner"
+          class="hidden mt-3 p-3 rounded-xl text-sm text-center font-medium flex items-center justify-center gap-2 transition-all duration-300"
         >
-          Search
-        </button>
-        <button
-          id="location-btn"
-          class="bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600"
-        >
-          📍
-        </button>
-        <button
-          id="unit-btn"
-          class="bg-gray-700 text-white px-3 py-2 rounded hover:bg-gray-800 font-bold"
-        >
-          °C
-        </button>
+          <span id="status-banner-text"></span>
+        </div>
+      </header>
+
+      <!-- Loading Skeleton Indicator -->
+      <div id="loading-spinner" class="hidden my-12 flex flex-col items-center justify-center gap-3">
+        <div class="w-12 h-12 border-4 border-sky-400/30 border-t-sky-400 rounded-full animate-spin"></div>
+        <p class="text-slate-300 text-sm font-medium animate-pulse">Fetching atmospheric data...</p>
       </div>
 
-      <select
-        id="recent-cities"
-        class="w-full mt-4 p-2 border border-gray-300 rounded hidden"
-      >
-        <option value="" disabled selected>Recent Cities</option>
-      </select>
-
-      <div
-        id="error-msg"
-        class="hidden mt-2 text-red-500 text-sm text-center font-semibold"
-      ></div>
-    </header>
-
-    <main id="weather-container" class="w-full max-w-4xl hidden relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-      
-      <div class="bg-white p-8 rounded-lg shadow-lg text-center flex flex-col justify-center h-full">
-        <h2 id="city-name" class="text-4xl font-bold mb-2">London</h2>
-        <p id="weather-date" class="text-gray-500 mb-6">--</p>
+      <!-- Main Weather Dashboard Content -->
+      <main id="weather-container" class="space-y-6 flex-grow">
         
-        <img
-          id="weather-icon"
-          src=""
-          alt="Weather Icon"
-          class="mx-auto w-32 h-32"
-        />
-        
-        <p id="temperature" class="text-6xl font-bold my-4">--°C</p>
-        <p id="description" class="text-2xl capitalize text-gray-600 mb-6">--</p>
-
-        <div class="flex justify-around mt-auto text-gray-700 bg-gray-50 p-4 rounded-lg">
-          <div class="text-center">
-            <p class="font-semibold text-base">Wind</p>
-            <p id="wind-speed" class="text-xl">--</p>
+        <!-- Weather Alert / Severe Warning (Dynamic) -->
+        <div id="weather-alert" class="hidden p-4 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-200 flex items-start gap-3 backdrop-blur-md shadow-lg">
+          <i data-lucide="alert-triangle" class="w-6 h-6 text-amber-400 shrink-0 mt-0.5 animate-bounce-subtle"></i>
+          <div class="flex-1">
+            <h4 id="alert-title" class="font-bold text-sm sm:text-base text-amber-300">Severe Weather Advisory</h4>
+            <p id="alert-desc" class="text-xs sm:text-sm text-amber-200/90 mt-0.5"></p>
           </div>
-          <div class="text-center">
-            <p class="font-semibold text-base">Humidity</p>
-            <p id="humidity" class="text-xl">--</p>
+        </div>
+
+        <!-- Top Section: Hero Card + 5-Day Highlights -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Hero Card (Current Condition Overview) -->
+          <div class="lg:col-span-7 glass-card p-6 sm:p-8 relative overflow-hidden flex flex-col justify-between shadow-2xl">
+            <!-- Background Decorative Glow -->
+            <div class="absolute -top-24 -right-24 w-64 h-64 bg-sky-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Top Row: Location, Time & Favorite Pin -->
+            <div class="flex items-start justify-between gap-4 relative z-10">
+              <div>
+                <div class="flex items-center gap-2.5">
+                  <h2 id="city-name" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">--</h2>
+                  <span id="country-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-white/20 border border-white/20 text-slate-200">--</span>
+                  <button id="favorite-toggle-btn" class="p-1.5 rounded-lg hover:bg-white/15 text-slate-400 hover:text-amber-400 transition" title="Toggle Favorite">
+                    <i data-lucide="star" id="favorite-icon" class="w-5 h-5"></i>
+                  </button>
+                </div>
+                <div class="flex items-center gap-2 mt-1.5 text-slate-300 text-xs sm:text-sm">
+                  <i data-lucide="clock" class="w-4 h-4 text-sky-400"></i>
+                  <span id="local-time">--</span>
+                  <span>•</span>
+                  <span id="local-date">--</span>
+                  <span id="day-night-badge" class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-300 border border-sky-500/30">Day</span>
+                </div>
+              </div>
+
+              <!-- Weather Icon Graphic -->
+              <div class="relative shrink-0 flex flex-col items-center">
+                <img
+                  id="weather-icon"
+                  src="https://openweathermap.org/img/wn/02d@4x.png"
+                  alt="Weather Condition Icon"
+                  class="w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)] animate-float"
+                />
+              </div>
+            </div>
+
+            <!-- Middle Row: Big Temp & Condition -->
+            <div class="my-6 relative z-10">
+              <div class="flex items-baseline gap-4">
+                <div id="temperature" class="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tighter text-white drop-shadow-md">
+                  --°
+                </div>
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <span id="condition-tag" class="px-3 py-1 rounded-xl text-xs sm:text-sm font-semibold bg-sky-500/30 text-sky-200 border border-sky-400/30 capitalize">
+                      --
+                    </span>
+                  </div>
+                  <p id="description" class="text-base sm:text-lg text-slate-200 font-medium capitalize mt-1">--</p>
+                  <div class="flex items-center gap-3 text-xs sm:text-sm text-slate-300 font-medium">
+                    <span class="flex items-center gap-1 text-emerald-300">
+                      <i data-lucide="arrow-down" class="w-3.5 h-3.5"></i> Low: <span id="temp-low">--°</span>
+                    </span>
+                    <span class="flex items-center gap-1 text-rose-300">
+                      <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i> High: <span id="temp-high">--°</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Row: Quick Stats Banner -->
+            <div class="pt-4 border-t border-white/10 grid grid-cols-3 gap-2 text-center relative z-10 bg-white/5 rounded-xl p-3">
+              <div>
+                <p class="text-xs text-slate-400 font-medium">Feels Like</p>
+                <p id="feels-like" class="text-base sm:text-lg font-bold text-white mt-0.5">--°</p>
+              </div>
+              <div>
+                <p class="text-xs text-slate-400 font-medium">Wind</p>
+                <p id="quick-wind" class="text-base sm:text-lg font-bold text-white mt-0.5">--</p>
+              </div>
+              <div>
+                <p class="text-xs text-slate-400 font-medium">Humidity</p>
+                <p id="quick-humidity" class="text-base sm:text-lg font-bold text-white mt-0.5">--%</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5-Day Forecast Card -->
+          <div class="lg:col-span-5 glass-card p-5 sm:p-6 flex flex-col justify-between shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <i data-lucide="calendar-days" class="w-5 h-5 text-sky-400"></i>
+                5-Day Forecast
+              </h3>
+              <span class="text-xs text-slate-400 font-medium">Daily Outlook</span>
+            </div>
+
+            <!-- Forecast List -->
+            <div id="forecast-container" class="space-y-2.5 divide-y divide-white/5">
+              <!-- Dynamic Daily Cards -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Hourly Forecast Section (24-Hour Timeline Slider) -->
+        <section class="glass-card p-5 sm:p-6 shadow-2xl">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <i data-lucide="clock-3" class="w-5 h-5 text-sky-400"></i>
+              <h3 class="text-lg font-bold text-white">Hourly Forecast</h3>
+              <span class="text-xs text-slate-400 ml-1 hidden sm:inline">(Next 24-48 Hours)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="hourly-prev-btn" class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 transition" title="Scroll left">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button id="hourly-next-btn" class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 transition" title="Scroll right">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Horizontal Scroll Container -->
+          <div id="hourly-forecast-container" class="flex gap-3 overflow-x-auto pb-3 pt-1 custom-scrollbar scroll-smooth">
+            <!-- Dynamic Hourly Items -->
+          </div>
+        </section>
+
+        <!-- Detailed Atmospheric Metrics Grid (8 Cards) -->
+        <section>
+          <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <i data-lucide="gauge" class="w-5 h-5 text-sky-400"></i>
+            Detailed Atmospheric Conditions
+          </h3>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- 1. Air Quality Index (AQI) -->
+            <div class="glass-card-hover p-4 sm:p-5 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <span class="flex items-center gap-1.5"><i data-lucide="wind" class="w-4 h-4 text-emerald-400"></i> Air Quality</span>
+                <span id="aqi-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Good</span>
+              </div>
+              <div class="my-3">
+                <div class="flex items-baseline gap-2">
+                  <span id="aqi-value" class="text-3xl font-black text-white">--</span>
+                  <span id="aqi-level-text" class="text-sm font-semibold text-emerald-400">Satisfactory</span>
+                </div>
+                <p id="aqi-advice" class="text-xs text-slate-300 mt-1 line-clamp-2">Air quality is ideal for outdoor activities.</p>
+              </div>
+              <div class="pt-2 border-t border-white/10 grid grid-cols-2 gap-1 text-[11px] text-slate-400">
+                <span>PM2.5: <b id="pm25-val" class="text-slate-200">--</b></span>
+                <span>PM10: <b id="pm10-val" class="text-slate-200">--</b></span>
+              </div>
+            </div>
+
+            <!-- 2. UV Index -->
+            <div class="glass-card-hover p-4 sm:p-5 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <span class="flex items-center gap-1.5"><i data-lucide="sun-medium" class="w-4 h-4 text-amber-400"></i> UV Index</span>
+                <span id="uv-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Moderate</span>
+              </div>
+              <div class="my-3">
+                <div class="flex items-baseline gap-2">
+                  <span id="uv-value" class="text-3xl font-black text-white">--</span>
+                  <span id="uv-level-text" class="text-sm font-semibold text-amber-400">Moderate</span>
+                </div>
+                <p id="uv-advice" class="text-xs text-slate-300 mt-1 line-clamp-2">Wear sunscreen SPF 30+ and sunglasses during midday.</p>
+              </div>
+              <!-- UV Progress Bar -->
+              <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden mt-1">
+                <div id="uv-progress" class="bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 h-full rounded-full w-1/3 transition-all duration-500"></div>
+              </div>
+            </div>
+
+            <!-- 3. Sunrise & Sunset Solar Arc -->
+            <div class="glass-card-hover p-4 sm:p-5 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <span class="flex items-center gap-1.5"><i data-lucide="sunrise" class="w-4 h-4 text-orange-400"></i> Solar Timeline</span>
+                <span id="daylight-hours" class="text-xs text-slate-300 font-medium">-- hrs</span>
+              </div>
+              <div class="my-2 space-y-2">
+                <div class="flex items-center justify-between text-sm">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="sunrise" class="w-4 h-4 text-amber-300"></i>
+                    <div>
+                      <p class="text-[10px] text-slate-400 uppercase font-semibold">Sunrise</p>
+                      <p id="sunrise-time" class="font-bold text-white text-sm">--:--</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 text-right">
+                    <div>
+                      <p class="text-[10px] text-slate-400 uppercase font-semibold">Sunset</p>
+                      <p id="sunset-time" class="font-bold text-white text-sm">--:--</p>
+                    </div>
+                    <i data-lucide="sunset" class="w-4 h-4 text-rose-300"></i>
+                  </div>
+                </div>
+                <!-- Sun Daylight Arc Bar -->
+                <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                  <div id="solar-progress" class="bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 h-full rounded-full w-1/2 transition-all duration-500"></div>
+                </div>
+              </div>
+              <div class="pt-2 border-t border-white/10 text-[11px] text-slate-400 flex justify-between">
+                <span id="solar-status-text">Sun position tracker</span>
+              </div>
+            </div>
+
+            <!-- 4. Wind & Dynamic Compass Direction -->
+            <div class="glass-card-hover p-4 sm:p-5 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <span class="flex items-center gap-1.5"><i data-lucide="wind" class="w-4 h-4 text-sky-400"></i> Wind & Gusts</span>
+                <span id="wind-direction-cardinal" class="px-2 py-0.5 rounded text-xs font-bold bg-white/15 text-sky-300">N</span>
+              </div>
+              <div class="my-2 flex items-center justify-between">
+                <div>
+                  <div class="flex items-baseline gap-1">
+                    <span id="wind-speed-val" class="text-3xl font-black text-white">--</span>
+                    <span id="wind-speed-unit" class="text-xs text-slate-400 font-semibold">km/h</span>
+                  </div>
+                  <p class="text-xs text-slate-300 mt-1">Gusts: <b id="wind-gusts" class="text-white">--</b></p>
+                </div>
+                <!-- Compass Dial Graphic -->
+                <div class="relative w-12 h-12 rounded-full border border-white/20 bg-white/5 flex items-center justify-center shadow-inner">
+                  <span class="absolute top-0.5 text-[8px] font-bold text-slate-400">N</span>
+                  <div id="compass-needle" class="w-1 h-8 bg-gradient-to-t from-sky-400 to-rose-500 rounded-full transform rotate-0 transition-transform duration-700"></div>
+                </div>
+              </div>
+              <div class="pt-2 border-t border-white/10 text-[11px] text-slate-400">
+                <span>Angle: <b id="wind-deg" class="text-slate-200">0°</b></span>
+              </div>
+            </div>
+
+            <!-- 5. Humidity & Dew Point -->
+            <div class="glass-card-hover p-4 sm:p-5 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <span class="flex items-center gap-1.5"><i data-lucide="droplets" class="w-4 h-4 text-sky-400"></i> Humidity</span>
+                <span id="humidity-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-sky-500/20 text-sky-300">Normal</span>
+              </div>
+              <div class="my-3">
+                <div class="flex items-baseline gap-1">
+                  <span id="humidity-val" class="text-3xl font-black text-white">--</span>
+                  <span class="text-lg font-bold text-slate-300">%</span>
+                </div>
+                <p id="dew-point" class="text-xs text-slate-300 mt-1">The dew point is -- right now.</p>
+              </div>
+              <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                <div id="humidity-bar" class="bg-sky-400 h-full rounded-full w-1/2 transition-all duration-500"></div>
+              </div>
+            </div>
+
+            <!-- 6. Visibility -->
+            <div class="glass-card-hover p-4 sm:p-5 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <span class="flex items-center gap-1.5"><i data-lucide="eye" class="w-4 h-4 text-indigo-400"></i> Visibility</span>
+                <span id="visibility-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-indigo-500/20 text-indigo-300">Clear</span>
+              </div>
+              <div class="my-3">
+                <div class="flex items-baseline gap-1">
+                  <span id="visibility-val" class="text-3xl font-black text-white">--</span>
+                  <span id="visibility-unit" class="text-xs text-slate-400 font-semibold">km</span>
+                </div>
+                <p id="visibility-desc" class="text-xs text-slate-300 mt-1">Perfect horizontal clarity across the area.</p>
+              </div>
+              <div class="pt-2 border-t border-white/10 text-[11px] text-slate-400">
+                <span>Fog Risk: <b id="fog-risk" class="text-slate-200">Very Low</b></span>
+              </div>
+            </div>
+
+            <!-- 7. Atmospheric Pressure -->
+            <div class="glass-card-hover p-4 sm:p-5 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <span class="flex items-center gap-1.5"><i data-lucide="gauge" class="w-4 h-4 text-purple-400"></i> Pressure</span>
+                <span id="pressure-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-purple-500/20 text-purple-300">Steady</span>
+              </div>
+              <div class="my-3">
+                <div class="flex items-baseline gap-1">
+                  <span id="pressure-val" class="text-3xl font-black text-white">--</span>
+                  <span id="pressure-unit" class="text-xs text-slate-400 font-semibold">hPa</span>
+                </div>
+                <p id="pressure-desc" class="text-xs text-slate-300 mt-1">Standard sea level barometric pressure.</p>
+              </div>
+              <div class="pt-2 border-t border-white/10 text-[11px] text-slate-400 flex justify-between">
+                <span>Sea Level: <b id="sea-level-val" class="text-slate-200">--</b></span>
+              </div>
+            </div>
+
+            <!-- 8. Precipitation & Clouds -->
+            <div class="glass-card-hover p-4 sm:p-5 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <span class="flex items-center gap-1.5"><i data-lucide="cloud-rain" class="w-4 h-4 text-cyan-400"></i> Precipitation</span>
+                <span id="pop-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-cyan-500/20 text-cyan-300">0%</span>
+              </div>
+              <div class="my-3">
+                <div class="flex items-baseline gap-1">
+                  <span id="cloud-val" class="text-3xl font-black text-white">--</span>
+                  <span class="text-lg font-bold text-slate-300">%</span>
+                </div>
+                <p id="precip-desc" class="text-xs text-slate-300 mt-1">Cloud coverage overhead.</p>
+              </div>
+              <div class="pt-2 border-t border-white/10 text-[11px] text-slate-400 flex justify-between">
+                <span>Rain Chance: <b id="rain-chance" class="text-cyan-300">--%</b></span>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Interactive Weather Radar & Satellite Map -->
+        <section class="glass-card p-5 sm:p-6 shadow-2xl">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <i data-lucide="map" class="w-5 h-5 text-sky-400"></i>
+                Interactive Weather Radar & Map
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">Explore precipitation, cloud coverage, temperature, and wind overlay layers</p>
+            </div>
+
+            <!-- Layer Controls -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button class="map-layer-btn glass-pill text-xs py-1 px-3 bg-sky-500 text-white border-sky-400" data-layer="clouds_new">
+                ☁️ Clouds
+              </button>
+              <button class="map-layer-btn glass-pill text-xs py-1 px-3" data-layer="precipitation_new">
+                🌧️ Rain
+              </button>
+              <button class="map-layer-btn glass-pill text-xs py-1 px-3" data-layer="temp_new">
+                🌡️ Temp
+              </button>
+              <button class="map-layer-btn glass-pill text-xs py-1 px-3" data-layer="wind_new">
+                💨 Wind
+              </button>
+            </div>
+          </div>
+
+          <!-- Leaflet Map Container -->
+          <div id="weather-map" class="w-full h-80 sm:h-96 rounded-xl border border-white/15 shadow-inner relative z-0"></div>
+        </section>
+
+      </main>
+
+      <!-- Footer & Credits -->
+      <footer class="mt-12 pt-6 border-t border-white/10 text-slate-400 text-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-slate-200">SkyCast Weather</span>
+          <span>•</span>
+          <span>Designed & Built by <b>Harsh Gautam</b></span>
+        </div>
+        <div class="flex items-center gap-4 text-slate-400">
+          <span>Powered by OpenWeatherMap & Open-Meteo</span>
+          <span>•</span>
+          <button id="shortcuts-modal-btn" class="hover:text-sky-400 transition underline flex items-center gap-1">
+            <i data-lucide="keyboard" class="w-3.5 h-3.5"></i> Shortcuts
+          </button>
+        </div>
+      </footer>
+
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div id="shortcuts-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 hidden">
+      <div class="glass-card bg-slate-900/90 max-w-md w-full p-6 shadow-2xl border border-white/20 rounded-2xl relative">
+        <button id="close-shortcuts-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <i data-lucide="keyboard" class="w-5 h-5 text-sky-400"></i>
+          Keyboard Shortcuts
+        </h3>
+        <div class="space-y-2.5 text-sm text-slate-300">
+          <div class="flex items-center justify-between py-1.5 border-b border-white/10">
+            <span>Focus Search Bar</span>
+            <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">/</kbd>
+          </div>
+          <div class="flex items-center justify-between py-1.5 border-b border-white/10">
+            <span>Detect Current Location</span>
+            <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">L</kbd>
+          </div>
+          <div class="flex items-center justify-between py-1.5 border-b border-white/10">
+            <span>Toggle Units (°C / °F)</span>
+            <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">U</kbd>
+          </div>
+          <div class="flex items-center justify-between py-1.5 border-b border-white/10">
+            <span>Toggle Soundscape</span>
+            <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">S</kbd>
+          </div>
+          <div class="flex items-center justify-between py-1.5">
+            <span>Close Modals / Dropdowns</span>
+            <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">Esc</kbd>
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="flex flex-col">
-          <h3 class="text-2xl font-bold mb-4 text-gray-800 bg-white/80 p-2 rounded backdrop-blur-sm">5-Day Forecast</h3>
-          <div id="forecast-container" class="space-y-3">
-              </div>
-      </div>
-    </main>
-
-    <footer class="mt-8 text-gray-500 text-sm relative z-10">
-        <p>Developed by Harsh Gautam</p>
-    </footer>
-
-    <script src="./src/script.js"></script>
+    <!-- Application Script (ES Module) -->
+    <script type="module" src="./src/script.js"></script>
   </body>
 </html>
