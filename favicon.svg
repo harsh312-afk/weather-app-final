@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="50%" stop-color="#0369a1" />
+      <stop offset="100%" stop-color="#312e81" />
+    </linearGradient>
+
+    <!-- Sun Radiant Gradient -->
+    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="60%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#ea580c" />
+    </linearGradient>
+
+    <!-- Glossy Cloud Gradient -->
+    <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="85%" stop-color="#e0f2fe" />
+      <stop offset="100%" stop-color="#bae6fd" />
+    </linearGradient>
+
+    <!-- Cloud Shadow -->
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#0f172a" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Container matching App Branding -->
+  <rect width="64" height="64" rx="16" fill="url(#skyGrad)" />
+  <rect width="62" height="62" x="1" y="1" rx="15" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+
+  <!-- Glowing Sun Behind Cloud -->
+  <circle cx="41" cy="23" r="10.5" fill="url(#sunGrad)" />
+
+  <!-- Sun Beam Accents -->
+  <path d="M41 8v3.5 M41 34.5v3.5 M26 23h3.5 M52.5 23h3.5 M30.4 12.4l2.5 2.5 M49.1 31.1l2.5 2.5 M30.4 33.6l2.5-2.5 M49.1 14.9l2.5-2.5" 
+        stroke="#fde047" stroke-width="2.2" stroke-linecap="round" opacity="0.85" />
+
+  <!-- Stylized Fluffy Cloud -->
+  <path d="M22 47h23a9 9 0 0 0 2-17.8 12.5 12.5 0 0 0-23.4-3.5A8.5 8.5 0 0 0 13.5 38.5 8.5 8.5 0 0 0 22 47z" 
+        fill="url(#cloudGrad)" 
+        filter="url(#dropShadow)" />
+</svg>
