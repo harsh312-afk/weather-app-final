@@ -2,7 +2,7 @@
 
 # 🌤️ SkyCast — Atmospheric Weather & Forecast Dashboard
 
-[![Build & Tests](https://img.shields.io/badge/tests-8%20passed-brightgreen.svg)]()
+[![Build & Tests](https://img.shields.io/badge/tests-11%20passed-brightgreen.svg)]()
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-v3.4.19-38bdf8.svg?logo=tailwind-css&logoColor=white)]()
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES2022-f7df1e.svg?logo=javascript&logoColor=black)]()
 [![Leaflet](https://img.shields.io/badge/Leaflet-v1.9.4-199900.svg?logo=leaflet&logoColor=white)]()
@@ -124,10 +124,47 @@
 
 ---
 
+## ☁️ Deploying to Vercel
+
+SkyCast is fully configured and ready for production hosting on **Vercel** with optimized caching, clean URLs, and security headers configured via `vercel.json`.
+
+### Option A: Deploy via Vercel CLI (Fastest)
+
+1. Authenticate with Vercel (if not already logged in):
+   ```bash
+   vercel login
+   ```
+2. Deploy directly from your terminal:
+   ```bash
+   vercel
+   ```
+3. When prompted, accept default settings (Build Command: `npm run build`, Output Directory: `.`).
+4. Deploy to production:
+   ```bash
+   vercel --prod
+   ```
+
+### Option B: Deploy via GitHub (Continuous Deployment)
+
+1. Push your code to your GitHub repository:
+   ```bash
+   git add .
+   git commit -m "feat: optimize for production and vercel hosting"
+   git push origin main
+   ```
+2. Go to [vercel.com/new](https://vercel.com/new).
+3. Import the `weather-app-final` repository.
+4. Keep the Framework Preset as **Other** (Vercel automatically detects `package.json` and runs `npm run build`).
+5. Click **Deploy**. Vercel will build and assign a global CDN URL with automatic SSL and continuous deployment on every `git push`!
+
+---
+
 ## 📁 Project Structure
 
 ```
 weather-app-final/
+├── .gitignore               # Git ignore rules (node_modules, vercel cache, envs)
+├── vercel.json              # Vercel deployment & security headers configuration
 ├── dist/
 │   └── output.css           # Minified compiled Tailwind CSS
 ├── src/
@@ -135,8 +172,8 @@ weather-app-final/
 │   ├── script.js            # Main application controller & rendering engine
 │   └── utils.js             # Pure utility functions & unit conversion math
 ├── tests/
-│   └── weather.test.js      # Automated unit test suite
-├── index.html               # Main dashboard UI
+│   └── weather.test.js      # Automated unit test suite (11 passing tests)
+├── index.html               # Main dashboard UI (Accessible & CWV optimized)
 ├── package.json             # NPM metadata, scripts & dependencies
 ├── tailwind.config.js       # Custom Tailwind theme configuration
 └── README.md                # Documentation & guide

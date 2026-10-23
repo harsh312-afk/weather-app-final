@@ -9,6 +9,10 @@
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://api.openweathermap.org">
+    <link rel="dns-prefetch" href="https://api.open-meteo.com">
+    <link rel="dns-prefetch" href="https://air-quality-api.open-meteo.com">
+    <link rel="dns-prefetch" href="https://basemaps.cartocdn.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Leaflet CSS for Weather Map -->
@@ -17,10 +21,9 @@
     <!-- Compiled Tailwind CSS -->
     <link href="./dist/output.css" rel="stylesheet" />
     
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Lucide Icons & Leaflet JS (Deferred for optimal FCP / LCP) -->
+    <script defer src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   </head>
   <body class="min-h-screen bg-slate-950 text-slate-100 relative selection:bg-sky-500 selection:text-white transition-colors duration-700">
     
@@ -52,10 +55,10 @@
 
             <!-- Mobile Quick Actions -->
             <div class="flex items-center gap-2 lg:hidden">
-              <button id="mobile-unit-btn" class="glass-pill text-xs py-1.5 px-3 flex items-center gap-1" title="Toggle °C / °F">
+              <button id="mobile-unit-btn" class="glass-pill text-xs py-1.5 px-3 flex items-center gap-1" title="Toggle °C / °F" aria-label="Toggle temperature unit between Celsius and Fahrenheit">
                 <span class="font-bold text-sky-400 active-unit-text">°C</span>
               </button>
-              <button id="mobile-audio-btn" class="glass-pill text-xs py-1.5 px-2.5" title="Toggle Soundscape">
+              <button id="mobile-audio-btn" class="glass-pill text-xs py-1.5 px-2.5" title="Toggle Soundscape" aria-label="Toggle ambient weather soundscape">
                 <i data-lucide="volume-x" class="w-4 h-4 text-slate-400 audio-icon"></i>
               </button>
             </div>
@@ -63,15 +66,19 @@
 
           <!-- Search Input & Autocomplete Dropdown -->
           <div class="relative w-full lg:max-w-xl">
-            <form id="search-form" class="relative flex items-center w-full" onsubmit="return false;">
-              <i data-lucide="search" class="absolute left-4 w-5 h-5 text-slate-400 pointer-events-none"></i>
+            <form id="search-form" class="relative flex items-center w-full" onsubmit="return false;" role="search">
+              <i data-lucide="search" class="absolute left-4 w-5 h-5 text-slate-400 pointer-events-none" aria-hidden="true"></i>
               <input
                 type="text"
                 id="city-input"
                 placeholder="Search city, country or place (e.g. Tokyo, Paris, New York)..."
                 autocomplete="off"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded="false"
+                aria-controls="suggestions-dropdown"
                 class="glass-input w-full pl-12 pr-28 py-3 text-sm sm:text-base font-medium shadow-inner placeholder-slate-400/80"
-                aria-label="Search city"
+                aria-label="Search city or location"
               />
               <div class="absolute right-2 flex items-center gap-1.5">
                 <button
@@ -79,6 +86,7 @@
                   id="clear-search-btn"
                   class="hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition"
                   title="Clear input"
+                  aria-label="Clear search input"
                 >
                   <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
@@ -86,6 +94,7 @@
                   type="submit"
                   id="search-btn"
                   class="glass-button bg-sky-500 hover:bg-sky-400 text-white text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg shadow-md shadow-sky-500/20"
+                  aria-label="Submit search"
                 >
                   Search
                 </button>
@@ -95,6 +104,8 @@
             <!-- Autocomplete Suggestions Dropdown -->
             <div
               id="suggestions-dropdown"
+              role="listbox"
+              aria-label="Search suggestions"
               class="absolute left-0 right-0 top-full mt-2 glass-card bg-slate-900/95 backdrop-blur-2xl border border-white/20 rounded-xl shadow-2xl overflow-hidden hidden z-50 divide-y divide-white/10 max-h-72 overflow-y-auto custom-scrollbar"
             >
               <!-- Dynamic suggestions inserted here -->
@@ -107,6 +118,7 @@
               id="location-btn"
               class="glass-button bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30"
               title="Detect Current Location (L)"
+              aria-label="Detect current location"
             >
               <i data-lucide="locate" class="w-4 h-4"></i>
               <span class="text-sm">My Location</span>
@@ -116,6 +128,7 @@
               id="unit-btn"
               class="glass-button bg-white/10 hover:bg-white/20 text-slate-200 border border-white/20 font-bold min-w-[50px]"
               title="Toggle Units (°C / °F) (U)"
+              aria-label="Toggle units between Celsius and Fahrenheit"
             >
               <span class="active-unit-text">°C</span>
             </button>
@@ -124,6 +137,7 @@
               id="audio-btn"
               class="glass-button bg-white/10 hover:bg-white/20 text-slate-300 border border-white/20"
               title="Toggle Atmospheric Soundscape (S)"
+              aria-label="Toggle ambient weather soundscape"
             >
               <i data-lucide="volume-x" class="w-4 h-4 audio-icon"></i>
             </button>
@@ -132,6 +146,7 @@
               id="share-btn"
               class="glass-button bg-white/10 hover:bg-white/20 text-slate-300 border border-white/20"
               title="Share Weather Report"
+              aria-label="Share weather report"
             >
               <i data-lucide="share-2" class="w-4 h-4"></i>
             </button>
@@ -222,7 +237,10 @@
                 <img
                   id="weather-icon"
                   src="https://openweathermap.org/img/wn/02d@4x.png"
-                  alt="Weather Condition Icon"
+                  alt="Current weather condition icon"
+                  width="112"
+                  height="112"
+                  fetchpriority="high"
                   class="w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)] animate-float"
                 />
               </div>
@@ -544,40 +562,40 @@
 
     </div>
 
-    <!-- Keyboard Shortcuts Modal -->
-    <div id="shortcuts-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 hidden">
-      <div class="glass-card bg-slate-900/90 max-w-md w-full p-6 shadow-2xl border border-white/20 rounded-2xl relative">
-        <button id="close-shortcuts-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg">
+    <!-- Keyboard Shortcuts Modal (Native Accessible HTML Dialog) -->
+    <dialog id="shortcuts-modal" closedby="any" aria-labelledby="shortcuts-title" class="glass-card bg-slate-900/95 max-w-md w-full p-6 shadow-2xl border border-white/20 rounded-2xl relative text-slate-100">
+      <form method="dialog" class="absolute top-4 right-4">
+        <button id="close-shortcuts-btn" type="submit" class="text-slate-400 hover:text-white p-1 rounded-lg" aria-label="Close shortcuts dialog">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
-        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <i data-lucide="keyboard" class="w-5 h-5 text-sky-400"></i>
-          Keyboard Shortcuts
-        </h3>
-        <div class="space-y-2.5 text-sm text-slate-300">
-          <div class="flex items-center justify-between py-1.5 border-b border-white/10">
-            <span>Focus Search Bar</span>
-            <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">/</kbd>
-          </div>
-          <div class="flex items-center justify-between py-1.5 border-b border-white/10">
-            <span>Detect Current Location</span>
-            <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">L</kbd>
-          </div>
-          <div class="flex items-center justify-between py-1.5 border-b border-white/10">
-            <span>Toggle Units (°C / °F)</span>
-            <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">U</kbd>
-          </div>
-          <div class="flex items-center justify-between py-1.5 border-b border-white/10">
-            <span>Toggle Soundscape</span>
-            <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">S</kbd>
-          </div>
-          <div class="flex items-center justify-between py-1.5">
-            <span>Close Modals / Dropdowns</span>
-            <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">Esc</kbd>
-          </div>
+      </form>
+      <h3 id="shortcuts-title" class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+        <i data-lucide="keyboard" class="w-5 h-5 text-sky-400"></i>
+        Keyboard Shortcuts
+      </h3>
+      <div class="space-y-2.5 text-sm text-slate-300">
+        <div class="flex items-center justify-between py-1.5 border-b border-white/10">
+          <span>Focus Search Bar</span>
+          <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">/</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-white/10">
+          <span>Detect Current Location</span>
+          <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">L</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-white/10">
+          <span>Toggle Units (°C / °F)</span>
+          <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">U</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-white/10">
+          <span>Toggle Soundscape</span>
+          <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">S</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5">
+          <span>Close Modals / Dropdowns</span>
+          <kbd class="px-2 py-0.5 rounded bg-white/10 border border-white/20 text-xs font-mono font-bold">Esc</kbd>
         </div>
       </div>
-    </div>
+    </dialog>
 
     <!-- Application Script (ES Module) -->
     <script type="module" src="./src/script.js"></script>

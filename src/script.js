@@ -1,4 +1,5 @@
 import {
+  escapeHtml,
   celsiusToFahrenheit,
   fahrenheitToCelsius,
   msToMph,
@@ -7,6 +8,7 @@ import {
   metersToKm,
   metersToMiles,
   getWindDirection,
+  mapUsAqiToOpenWeatherScale,
   getAqiInfo,
   getUvInfo,
   formatLocalTime,
@@ -17,11 +19,13 @@ import {
 // ==========================================
 // CONFIGURATION & CONSTANTS
 // ==========================================
-const API_KEY = "e42c6cd592a17c6a9dda4120bf645170";
+// Configurable API key with fallback to bundled default or pure Open-Meteo
+const API_KEY = localStorage.getItem("skycast_api_key") || "e42c6cd592a17c6a9dda4120bf645170";
 const OPENWEATHER_BASE = "https://api.openweathermap.org/data/2.5";
 const GEO_BASE = "https://api.openweathermap.org/geo/1.0";
 const OPENMETEO_BASE = "https://api.open-meteo.com/v1/forecast";
 const OPENMETEO_GEO = "https://geocoding-api.open-meteo.com/v1/search";
+const OPENMETEO_AIR = "https://air-quality-api.open-meteo.com/v1/air-quality";
 
 // ==========================================
 // STATE MANAGEMENT
@@ -51,6 +55,7 @@ const state = {
   audioContext: null,
   audioNodes: {},
   debounceTimer: null,
+  suggestionAbortController: null,
 };
 
 // ==========================================
@@ -212,6 +217,29 @@ async function fetchWeatherData(lat, lon, nameHint = "") {
       console.warn("AQI fetch failed:", e);
     }
 
+    // Open-Meteo Air Quality Fallback if OpenWeather AQI failed or not available
+    if (!aqiData) {
+      try {
+        const omAqiUrl = `${OPENMETEO_AIR}?latitude=${lat}&longitude=${lon}&current=us_aqi,pm10,pm2_5`;
+        const omAqiRes = await fetch(omAqiUrl);
+        if (omAqiRes.ok) {
+          const omAqiJson = await omAqiRes.json();
+          if (omAqiJson.current) {
+            const mappedScale = mapUsAqiToOpenWeatherScale(omAqiJson.current.us_aqi);
+            aqiData = {
+              main: { aqi: mappedScale },
+              components: {
+                pm2_5: omAqiJson.current.pm2_5,
+                pm10: omAqiJson.current.pm10,
+              },
+            };
+          }
+        }
+      } catch (e) {
+        console.warn("Open-Meteo AQI fallback failed:", e);
+      }
+    }
+
     // 4. Fetch UV Index from Open-Meteo
     let uvIndex = 0;
     try {
@@ -257,12 +285,18 @@ async function fetchWeatherData(lat, lon, nameHint = "") {
 }
 
 async function fetchOpenMeteoCurrent(lat, lon, nameHint) {
-  const url = `${OPENMETEO_BASE}?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=sunrise,sunset&timezone=auto`;
+  const url = `${OPENMETEO_BASE}?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`;
   const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to fetch weather data from fallback provider");
   const data = await res.json();
 
   const weatherCodeInfo = mapWmoCode(data.current.weather_code, data.current.is_day);
+  const tMin = data.daily?.temperature_2m_min?.[0] !== undefined
+    ? Math.round(data.daily.temperature_2m_min[0])
+    : Math.round(data.current.temperature_2m - 2);
+  const tMax = data.daily?.temperature_2m_max?.[0] !== undefined
+    ? Math.round(data.daily.temperature_2m_max[0])
+    : Math.round(data.current.temperature_2m + 2);
 
   return {
     name: nameHint || "Location",
@@ -272,8 +306,8 @@ async function fetchOpenMeteoCurrent(lat, lon, nameHint) {
     main: {
       temp: data.current.temperature_2m,
       feels_like: data.current.apparent_temperature,
-      temp_min: data.current.temperature_2m - 2,
-      temp_max: data.current.temperature_2m + 2,
+      temp_min: tMin,
+      temp_max: tMax,
       pressure: Math.round(data.current.surface_pressure),
       humidity: data.current.relative_humidity_2m,
     },
@@ -347,13 +381,21 @@ function mapWmoCode(code, isDay = 1) {
 async function fetchSuggestions(query) {
   if (!query || query.trim().length < 2) {
     elements.suggestionsDropdown.classList.add("hidden");
+    elements.cityInput.setAttribute("aria-expanded", "false");
     return;
   }
+
+  // Abort previous inflight suggestion requests
+  if (state.suggestionAbortController) {
+    state.suggestionAbortController.abort();
+  }
+  state.suggestionAbortController = new AbortController();
+  const signal = state.suggestionAbortController.signal;
 
   try {
     // 1. Try OpenWeather Geocoding
     const geoUrl = `${GEO_BASE}/direct?q=${encodeURIComponent(query)}&limit=5&appid=${API_KEY}`;
-    const res = await fetch(geoUrl);
+    const res = await fetch(geoUrl, { signal });
     let items = [];
     if (res.ok) {
       items = await res.json();
@@ -361,7 +403,7 @@ async function fetchSuggestions(query) {
     
     // Fallback to OpenMeteo geocoding if needed
     if (!items || items.length === 0) {
-      const omRes = await fetch(`${OPENMETEO_GEO}?name=${encodeURIComponent(query)}&count=5&language=en&format=json`);
+      const omRes = await fetch(`${OPENMETEO_GEO}?name=${encodeURIComponent(query)}&count=5&language=en&format=json`, { signal });
       if (omRes.ok) {
         const omJson = await omRes.json();
         if (omJson.results) {
@@ -378,35 +420,47 @@ async function fetchSuggestions(query) {
 
     renderSuggestions(items);
   } catch (error) {
-    console.warn("Autocomplete error:", error);
+    if (error.name !== "AbortError") {
+      console.warn("Autocomplete error:", error);
+    }
   }
 }
 
 function renderSuggestions(locations) {
   if (!locations || locations.length === 0) {
     elements.suggestionsDropdown.classList.add("hidden");
+    elements.cityInput.setAttribute("aria-expanded", "false");
     return;
   }
 
   elements.suggestionsDropdown.innerHTML = locations
     .map(
-      (loc) => `
+      (loc) => {
+        const safeName = escapeHtml(loc.name);
+        const safeState = escapeHtml(loc.state);
+        const safeCountry = escapeHtml(loc.country || "");
+        const lat = Number(loc.lat) || 0;
+        const lon = Number(loc.lon) || 0;
+
+        return `
     <div class="suggestion-item p-3 hover:bg-white/15 cursor-pointer flex items-center justify-between transition-colors duration-150"
-         data-lat="${loc.lat}" data-lon="${loc.lon}" data-name="${loc.name}" data-country="${loc.country || ''}">
+         role="option" data-lat="${lat}" data-lon="${lon}" data-name="${safeName}" data-country="${safeCountry}">
       <div class="flex items-center gap-2.5">
         <i data-lucide="map-pin" class="w-4 h-4 text-sky-400"></i>
         <div>
-          <span class="font-semibold text-white text-sm">${loc.name}</span>
-          <span class="text-xs text-slate-400 ml-1.5">${loc.state ? `${loc.state}, ` : ""}${loc.country || ""}</span>
+          <span class="font-semibold text-white text-sm">${safeName}</span>
+          <span class="text-xs text-slate-400 ml-1.5">${safeState ? `${safeState}, ` : ""}${safeCountry}</span>
         </div>
       </div>
-      <span class="text-[11px] text-slate-500 font-mono">${loc.lat.toFixed(2)}°, ${loc.lon.toFixed(2)}°</span>
+      <span class="text-[11px] text-slate-500 font-mono">${lat.toFixed(2)}°, ${lon.toFixed(2)}°</span>
     </div>
-  `
+  `;
+      }
     )
     .join("");
 
   elements.suggestionsDropdown.classList.remove("hidden");
+  elements.cityInput.setAttribute("aria-expanded", "true");
   initLucide();
 
   // Add click listeners to items
@@ -418,6 +472,7 @@ function renderSuggestions(locations) {
       elements.cityInput.value = "";
       elements.clearSearchBtn.classList.add("hidden");
       elements.suggestionsDropdown.classList.add("hidden");
+      elements.cityInput.setAttribute("aria-expanded", "false");
       fetchWeatherData(lat, lon, name);
     });
   });
@@ -505,14 +560,15 @@ function renderHourlyForecast() {
     .map((hour) => {
       const timeInfo = formatLocalTime(hour.dt, timezoneOffset);
       const temp = Math.round(hour.main.temp);
-      const icon = hour.weather[0].icon;
+      const icon = hour.weather?.[0]?.icon || "01d";
+      const desc = escapeHtml(hour.weather?.[0]?.description || "Forecast");
       const pop = Math.round((hour.pop || 0) * 100);
-      const windSpeed = formatSpeed(hour.wind.speed);
+      const windSpeed = formatSpeed(hour.wind?.speed || 0);
 
       return `
       <div class="glass-card-hover min-w-[100px] sm:min-w-[115px] p-3.5 flex flex-col items-center justify-between text-center shrink-0">
         <span class="text-xs font-semibold text-slate-300">${timeInfo.timeString.replace(":00", "")}</span>
-        <img src="https://openweathermap.org/img/wn/${icon}.png" class="w-12 h-12 my-1 drop-shadow" alt="Forecast icon" />
+        <img src="https://openweathermap.org/img/wn/${icon}.png" width="48" height="48" loading="lazy" class="w-12 h-12 my-1 drop-shadow" alt="${desc}" />
         <span class="text-base font-bold text-white">${formatTemp(temp)}</span>
         <div class="flex items-center gap-1 text-[11px] text-cyan-300 mt-1 font-medium">
           <i data-lucide="droplets" class="w-3 h-3"></i> ${pop}%
@@ -537,7 +593,9 @@ function renderDailyForecast() {
       const dateLabel = `${day.dayInfo.monthName} ${day.dayInfo.dayNum}`;
       const min = formatTemp(day.minTemp);
       const max = formatTemp(day.maxTemp);
-      const icon = day.weather.icon;
+      const icon = day.weather?.icon || "01d";
+      const conditionMain = escapeHtml(day.weather?.main || "Weather");
+      const conditionDesc = escapeHtml(day.weather?.description || "Weather condition");
       const pop = day.pop || 0;
 
       return `
@@ -550,8 +608,8 @@ function renderDailyForecast() {
 
         <!-- Weather Condition & Icon -->
         <div class="flex items-center gap-2 flex-1 justify-center">
-          <img src="https://openweathermap.org/img/wn/${icon}.png" class="w-9 h-9" alt="${day.weather.main}" />
-          <span class="text-xs font-medium text-slate-300 capitalize hidden sm:inline">${day.weather.description}</span>
+          <img src="https://openweathermap.org/img/wn/${icon}.png" width="36" height="36" loading="lazy" class="w-9 h-9" alt="${conditionMain}" />
+          <span class="text-xs font-medium text-slate-300 capitalize hidden sm:inline">${conditionDesc}</span>
           ${pop > 20 ? `<span class="text-[11px] text-cyan-300 font-semibold flex items-center gap-0.5"><i data-lucide="umbrella" class="w-3 h-3"></i> ${pop}%</span>` : ""}
         </div>
 
@@ -965,13 +1023,16 @@ function updateMap(lat, lon, cityName, temp, condition) {
       state.map.removeLayer(state.mapMarker);
     }
 
+    const safeCity = escapeHtml(cityName);
+    const safeCondition = escapeHtml(condition);
+
     state.mapMarker = L.marker([lat, lon])
       .addTo(state.map)
       .bindPopup(
         `<div class="p-2 text-center">
-          <p class="font-bold text-base text-sky-400">${cityName}</p>
+          <p class="font-bold text-base text-sky-400">${safeCity}</p>
           <p class="text-xl font-extrabold text-white mt-1">${formatTemp(temp)}</p>
-          <p class="text-xs text-slate-300 capitalize">${condition}</p>
+          <p class="text-xs text-slate-300 capitalize">${safeCondition}</p>
         </div>`
       )
       .openPopup();
@@ -1069,11 +1130,42 @@ function updateSoundscape(condition) {
     state.audioNodes.rainGain = gain;
   }
 
-  // Set gain based on condition
+  // Wind sound generation
+  if (!state.audioNodes.windSource) {
+    const windNoise = ctx.createBufferSource();
+    windNoise.buffer = state.audioNodes.noiseBuffer;
+    windNoise.loop = true;
+
+    const windFilter = ctx.createBiquadFilter();
+    windFilter.type = "bandpass";
+    windFilter.frequency.setValueAtTime(320, now);
+    windFilter.Q.setValueAtTime(3.0, now);
+
+    const windGain = ctx.createGain();
+    windGain.gain.setValueAtTime(0, now);
+
+    windNoise.connect(windFilter);
+    windFilter.connect(windGain);
+    windGain.connect(ctx.destination);
+    windNoise.start(0);
+
+    state.audioNodes.windSource = windNoise;
+    state.audioNodes.windFilter = windFilter;
+    state.audioNodes.windGain = windGain;
+  }
+
+  // Set gains based on live conditions
   if (condition === "Rain" || condition === "Thunderstorm" || condition === "Drizzle") {
     state.audioNodes.rainGain.gain.linearRampToValueAtTime(0.08, now + 1);
   } else {
     state.audioNodes.rainGain.gain.linearRampToValueAtTime(0, now + 1);
+  }
+
+  const windSpeed = state.weather?.wind?.speed || 0;
+  if (windSpeed > 6 || condition === "Thunderstorm") {
+    state.audioNodes.windGain.gain.linearRampToValueAtTime(0.05, now + 1);
+  } else {
+    state.audioNodes.windGain.gain.linearRampToValueAtTime(0, now + 1);
   }
 }
 
@@ -1121,14 +1213,21 @@ function renderFavorites() {
 
   container.innerHTML = state.favorites
     .map(
-      (fav) => `
+      (fav) => {
+        const safeName = escapeHtml(fav.name);
+        const safeCountry = escapeHtml(fav.country || "");
+        const lat = Number(fav.lat) || 0;
+        const lon = Number(fav.lon) || 0;
+
+        return `
     <button class="glass-pill text-xs py-1 px-2.5 flex items-center gap-1 hover:border-amber-400/50 fav-chip"
-            data-lat="${fav.lat}" data-lon="${fav.lon}" data-name="${fav.name}">
+            data-lat="${lat}" data-lon="${lon}" data-name="${safeName}">
       <span class="text-amber-400">★</span>
-      <span class="text-white">${fav.name}</span>
-      <span class="text-slate-400 text-[10px]">${fav.country || ''}</span>
+      <span class="text-white">${safeName}</span>
+      <span class="text-slate-400 text-[10px]">${safeCountry}</span>
     </button>
-  `
+  `;
+      }
     )
     .join("");
 
@@ -1178,12 +1277,18 @@ function renderRecents() {
   clearBtn.classList.remove("hidden");
   container.innerHTML = state.recents
     .map(
-      (rec) => `
+      (rec) => {
+        const safeName = escapeHtml(rec.name);
+        const lat = Number(rec.lat) || 0;
+        const lon = Number(rec.lon) || 0;
+
+        return `
     <button class="glass-pill text-xs py-1 px-2.5 flex items-center gap-1 recent-chip"
-            data-lat="${rec.lat}" data-lon="${rec.lon}" data-name="${rec.name}">
-      <span class="text-slate-300">${rec.name}</span>
+            data-lat="${lat}" data-lon="${lon}" data-name="${safeName}">
+      <span class="text-slate-300">${safeName}</span>
     </button>
-  `
+  `;
+      }
     )
     .join("");
 
@@ -1341,24 +1446,38 @@ function setupEventListeners() {
     elements.hourlyContainer.scrollBy({ left: 300, behavior: "smooth" });
   });
 
-  // Keyboard Shortcuts Modal
+  // Keyboard Shortcuts Modal (Native Accessible HTML Dialog)
   elements.shortcutsModalBtn.addEventListener("click", () => {
-    elements.shortcutsModal.classList.remove("hidden");
-  });
-  elements.closeShortcutsBtn.addEventListener("click", () => {
-    elements.shortcutsModal.classList.add("hidden");
-  });
-  elements.shortcutsModal.addEventListener("click", (e) => {
-    if (e.target === elements.shortcutsModal) {
-      elements.shortcutsModal.classList.add("hidden");
+    if (typeof elements.shortcutsModal.showModal === "function") {
+      elements.shortcutsModal.showModal();
+    } else {
+      elements.shortcutsModal.setAttribute("open", "");
     }
   });
+
+  // Fallback for browsers without native closedby support
+  if (!("closedBy" in HTMLDialogElement.prototype)) {
+    elements.shortcutsModal.addEventListener("click", (event) => {
+      if (event.target !== elements.shortcutsModal) return;
+      const rect = elements.shortcutsModal.getBoundingClientRect();
+      const isContent = (
+        rect.top <= event.clientY &&
+        event.clientY <= rect.top + rect.height &&
+        rect.left <= event.clientX &&
+        event.clientX <= rect.left + rect.width
+      );
+      if (!isContent && typeof elements.shortcutsModal.close === "function") {
+        elements.shortcutsModal.close();
+      }
+    });
+  }
 
   // Global Keyboard Shortcuts
   document.addEventListener("keydown", (e) => {
     if (e.target.tagName === "INPUT") {
       if (e.key === "Escape") {
         elements.suggestionsDropdown.classList.add("hidden");
+        elements.cityInput.setAttribute("aria-expanded", "false");
         elements.cityInput.blur();
       }
       return;
@@ -1377,8 +1496,11 @@ function setupEventListeners() {
       e.preventDefault();
       toggleAudio();
     } else if (e.key === "Escape") {
-      elements.shortcutsModal.classList.add("hidden");
+      if (elements.shortcutsModal.open && typeof elements.shortcutsModal.close === "function") {
+        elements.shortcutsModal.close();
+      }
       elements.suggestionsDropdown.classList.add("hidden");
+      elements.cityInput.setAttribute("aria-expanded", "false");
     }
   });
 
@@ -1386,6 +1508,7 @@ function setupEventListeners() {
   document.addEventListener("click", (e) => {
     if (!elements.searchForm.contains(e.target) && !elements.suggestionsDropdown.contains(e.target)) {
       elements.suggestionsDropdown.classList.add("hidden");
+      elements.cityInput.setAttribute("aria-expanded", "false");
     }
   });
 }
@@ -1395,9 +1518,11 @@ async function handleSearchSubmit() {
   if (!query) return;
 
   elements.suggestionsDropdown.classList.add("hidden");
+  elements.cityInput.setAttribute("aria-expanded", "false");
   showLoading(true);
 
   try {
+    // 1. Try OpenWeather Geocoding
     const geoUrl = `${GEO_BASE}/direct?q=${encodeURIComponent(query)}&limit=1&appid=${API_KEY}`;
     const res = await fetch(geoUrl);
     if (res.ok) {
@@ -1411,7 +1536,7 @@ async function handleSearchSubmit() {
       }
     }
 
-    // Fallback: Direct search by name on /weather endpoint
+    // 2. Fallback: Direct search by name on OpenWeather /weather endpoint
     const directRes = await fetch(`${OPENWEATHER_BASE}/weather?q=${encodeURIComponent(query)}&appid=${API_KEY}&units=metric`);
     if (directRes.ok) {
       const data = await directRes.json();
@@ -1419,6 +1544,19 @@ async function handleSearchSubmit() {
       elements.clearSearchBtn.classList.add("hidden");
       fetchWeatherData(data.coord.lat, data.coord.lon, data.name);
       return;
+    }
+
+    // 3. Fallback: Open-Meteo Geocoding Search (100% free, no API key required)
+    const omRes = await fetch(`${OPENMETEO_GEO}?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
+    if (omRes.ok) {
+      const omData = await omRes.json();
+      if (omData.results && omData.results.length > 0) {
+        const item = omData.results[0];
+        elements.cityInput.value = "";
+        elements.clearSearchBtn.classList.add("hidden");
+        fetchWeatherData(item.latitude, item.longitude, item.name);
+        return;
+      }
     }
 
     throw new Error(`City "${query}" not found. Please verify spelling.`);

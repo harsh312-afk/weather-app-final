@@ -2,6 +2,16 @@
  * Utility functions for Weather App (Unit conversion, calculations, time processing)
  */
 
+export function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export function celsiusToFahrenheit(c) {
   return Math.round((c * 9) / 5 + 32);
 }
@@ -35,6 +45,15 @@ export function getWindDirection(deg) {
   const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
   const index = Math.round((deg % 360) / 22.5) % 16;
   return directions[index];
+}
+
+export function mapUsAqiToOpenWeatherScale(usAqi) {
+  const aqi = Number(usAqi) || 0;
+  if (aqi <= 50) return 1;
+  if (aqi <= 100) return 2;
+  if (aqi <= 150) return 3;
+  if (aqi <= 200) return 4;
+  return 5;
 }
 
 export function getAqiInfo(aqiIndex) {
@@ -125,9 +144,11 @@ export function groupForecastByDay(list = [], timezoneOffsetSec = 0) {
   const dailySummaries = [];
 
   for (const [dateKey, dayData] of dayMap.entries()) {
-    const temps = dayData.items.map((i) => i.main.temp);
-    const minTemp = Math.round(Math.min(...temps));
-    const maxTemp = Math.round(Math.max(...temps));
+    const validTemps = dayData.items
+      .map((i) => (i.main && typeof i.main.temp === "number" ? i.main.temp : null))
+      .filter((t) => t !== null);
+    const minTemp = validTemps.length > 0 ? Math.round(Math.min(...validTemps)) : 15;
+    const maxTemp = validTemps.length > 0 ? Math.round(Math.max(...validTemps)) : 22;
 
     // Find midday item or most representative condition
     const noonItem = dayData.items.find((i) => {
@@ -135,16 +156,23 @@ export function groupForecastByDay(list = [], timezoneOffsetSec = 0) {
       return h >= 11 && h <= 14;
     }) || dayData.items[Math.floor(dayData.items.length / 2)] || dayData.items[0];
 
-    const maxWind = Math.max(...dayData.items.map((i) => i.wind.speed || 0));
-    const avgHumidity = Math.round(dayData.items.reduce((acc, i) => acc + (i.main.humidity || 0), 0) / dayData.items.length);
+    const maxWind = Math.max(...dayData.items.map((i) => i.wind?.speed || 0));
+    const avgHumidity = Math.round(dayData.items.reduce((acc, i) => acc + (i.main?.humidity || 0), 0) / dayData.items.length);
     const maxPop = Math.round(Math.max(...dayData.items.map((i) => (i.pop || 0) * 100)));
+
+    const weatherObj = (noonItem.weather && noonItem.weather[0]) || {
+      id: 800,
+      main: "Clear",
+      description: "Clear sky",
+      icon: "01d",
+    };
 
     dailySummaries.push({
       dateKey,
       dayInfo: dayData.dayInfo,
       minTemp,
       maxTemp,
-      weather: noonItem.weather[0],
+      weather: weatherObj,
       windSpeed: maxWind,
       humidity: avgHumidity,
       pop: maxPop,

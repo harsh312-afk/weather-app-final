@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  escapeHtml,
   celsiusToFahrenheit,
   fahrenheitToCelsius,
   msToMph,
@@ -9,12 +10,32 @@ import {
   metersToKm,
   metersToMiles,
   getWindDirection,
+  mapUsAqiToOpenWeatherScale,
   getAqiInfo,
   getUvInfo,
   formatLocalTime,
   isNightTime,
   groupForecastByDay,
 } from "../src/utils.js";
+
+test("escapeHtml sanitizes special characters to prevent XSS", () => {
+  assert.equal(escapeHtml('<script>alert("xss")</script>'), '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
+  assert.equal(escapeHtml("Tom & Jerry 'Show'"), 'Tom &amp; Jerry &#039;Show&#039;');
+  assert.equal(escapeHtml(null), "");
+  assert.equal(escapeHtml(undefined), "");
+});
+
+test("mapUsAqiToOpenWeatherScale maps US AQI to 1-5 scale", () => {
+  assert.equal(mapUsAqiToOpenWeatherScale(25), 1);
+  assert.equal(mapUsAqiToOpenWeatherScale(50), 1);
+  assert.equal(mapUsAqiToOpenWeatherScale(75), 2);
+  assert.equal(mapUsAqiToOpenWeatherScale(100), 2);
+  assert.equal(mapUsAqiToOpenWeatherScale(130), 3);
+  assert.equal(mapUsAqiToOpenWeatherScale(150), 3);
+  assert.equal(mapUsAqiToOpenWeatherScale(185), 4);
+  assert.equal(mapUsAqiToOpenWeatherScale(200), 4);
+  assert.equal(mapUsAqiToOpenWeatherScale(310), 5);
+});
 
 test("celsiusToFahrenheit and fahrenheitToCelsius conversions", () => {
   assert.equal(celsiusToFahrenheit(0), 32);
@@ -137,4 +158,22 @@ test("groupForecastByDay accurately creates daily summaries with min/max temp", 
   assert.equal(grouped[1].maxTemp, 20);
   assert.equal(grouped[1].weather.main, "Rain");
   assert.equal(grouped[1].pop, 80);
+});
+
+test("groupForecastByDay handles empty or incomplete data safely", () => {
+  assert.deepEqual(groupForecastByDay([]), []);
+  assert.deepEqual(groupForecastByDay(null), []);
+
+  const fallbackData = [
+    {
+      dt: 1788220800,
+      main: {},
+      wind: {},
+    },
+  ];
+  const result = groupForecastByDay(fallbackData, 0);
+  assert.equal(result.length, 1);
+  assert.equal(typeof result[0].minTemp, "number");
+  assert.equal(typeof result[0].maxTemp, "number");
+  assert.equal(result[0].weather.main, "Clear");
 });
