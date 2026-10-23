@@ -2,6 +2,7 @@
   "name": "weather-app-final",
   "version": "2.0.0",
   "description": "Modern, feature-rich Weather Forecast and Atmospheric Dashboard with real-time conditions, hourly & 5-day forecasts, interactive weather maps, AQI, UV tracker, and ambient particle effects.",
+  "homepage": "https://weather-app-final-tan.vercel.app",
   "main": "src/script.js",
   "scripts": {
     "build:css": "tailwindcss -i ./src/input.css -o ./dist/output.css --minify",

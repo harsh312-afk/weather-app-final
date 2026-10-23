@@ -2,6 +2,8 @@
 
 # 🌤️ SkyCast — Atmospheric Weather & Forecast Dashboard
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-weather--app--final--tan.vercel.app-0070f3?style=for-the-badge&logo=vercel&logoColor=white)](https://weather-app-final-tan.vercel.app)
+
 [![Build & Tests](https://img.shields.io/badge/tests-11%20passed-brightgreen.svg)]()
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-v3.4.19-38bdf8.svg?logo=tailwind-css&logoColor=white)]()
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES2022-f7df1e.svg?logo=javascript&logoColor=black)]()
@@ -10,7 +12,9 @@
 
 **SkyCast** is an ultra-modern, responsive, feature-packed weather application built with Vanilla ES Modules JavaScript, Tailwind CSS, and Leaflet Maps. It delivers real-time weather analytics, accurate 24-hour and 5-day forecasts, air quality tracking, UV index assessments, interactive radar layers, and dynamic procedural weather atmospheres.
 
-[Live Demo](#-getting-started) • [Key Features](#-features) • [Tech Stack](#-tech-stack) • [Quickstart](#-getting-started)
+### 🚀 **[Visit Live Production App →](https://weather-app-final-tan.vercel.app)**
+
+[Live Demo](https://weather-app-final-tan.vercel.app) • [Key Features](#-features) • [Tech Stack](#-tech-stack) • [Quickstart](#-getting-started) • [Deploying to Vercel](#-deploying-to-vercel)
 
 </div>
 
