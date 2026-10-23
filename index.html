@@ -353,10 +353,17 @@
               </div>
               <div class="my-3">
                 <div class="flex items-baseline gap-2">
-                  <span id="aqi-value" class="text-3xl font-black text-white">--</span>
+                  <div class="flex items-baseline">
+                    <span id="aqi-value" class="text-3xl font-black text-white">--</span>
+                    <span class="text-xs text-slate-400 font-bold ml-1">/ 5</span>
+                  </div>
                   <span id="aqi-level-text" class="text-sm font-semibold text-emerald-400">Satisfactory</span>
                 </div>
                 <p id="aqi-advice" class="text-xs text-slate-300 mt-1 line-clamp-2">Air quality is ideal for outdoor activities.</p>
+                <!-- AQI 1-5 Progress Gauge -->
+                <div class="w-full bg-white/10 rounded-full h-1.5 mt-2.5 overflow-hidden" title="Air Quality Scale: 1 (Good) to 5 (Hazardous)">
+                  <div id="aqi-progress" class="h-full rounded-full bg-gradient-to-r from-emerald-400 via-amber-400 via-orange-500 to-rose-500 transition-all duration-500" style="width: 20%;"></div>
+                </div>
               </div>
               <div class="pt-2 border-t border-white/10 grid grid-cols-2 gap-1 text-[11px] text-slate-400">
                 <span>PM2.5: <b id="pm25-val" class="text-slate-200">--</b></span>

@@ -109,6 +109,7 @@ const elements = {
   aqiValue: document.getElementById("aqi-value"),
   aqiLevelText: document.getElementById("aqi-level-text"),
   aqiAdvice: document.getElementById("aqi-advice"),
+  aqiProgress: document.getElementById("aqi-progress"),
   pm25Val: document.getElementById("pm25-val"),
   pm10Val: document.getElementById("pm10-val"),
   uvBadge: document.getElementById("uv-badge"),
@@ -640,12 +641,18 @@ function renderDetailedAtmospherics(weather, isNight) {
     elements.aqiLevelText.textContent = aqiMeta.level;
     elements.aqiLevelText.className = `text-sm font-semibold ${aqiMeta.color}`;
     elements.aqiAdvice.textContent = aqiMeta.text;
+    if (elements.aqiProgress) {
+      elements.aqiProgress.style.width = `${Math.min(100, Math.round((aqiIndex / 5) * 100))}%`;
+    }
     elements.pm25Val.textContent = `${state.aqi.components?.pm2_5?.toFixed(1) || '--'} µg/m³`;
     elements.pm10Val.textContent = `${state.aqi.components?.pm10?.toFixed(1) || '--'} µg/m³`;
   } else {
     elements.aqiValue.textContent = "2";
     elements.aqiLevelText.textContent = "Fair";
     elements.aqiAdvice.textContent = "Air quality is satisfactory.";
+    if (elements.aqiProgress) {
+      elements.aqiProgress.style.width = "40%";
+    }
     elements.pm25Val.textContent = "12 µg/m³";
     elements.pm10Val.textContent = "20 µg/m³";
   }
