@@ -967,10 +967,16 @@ function initMap() {
       attributionControl: false,
     });
 
-    // Dark Tile Basemap (CartoDB Dark Matter / Voyager)
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      maxZoom: 18,
-      subdomains: "abcd",
+    // High-Contrast Dark Tile Basemap (Esri World Dark Gray - Free & No API Key Required)
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 16,
+      attribution: "Tiles &copy; Esri",
+    }).addTo(state.map);
+
+    // City Labels & Boundaries Reference Layer
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 16,
+      opacity: 0.85,
     }).addTo(state.map);
 
     // Weather Layer Overlay
